@@ -20,6 +20,7 @@ import "github.com/gocraft/dbr/v2"
 * MySQL
 * PostgreSQL
 * SQLite3
+* Clickhouse
 * MsSQL
 
 ## Examples
