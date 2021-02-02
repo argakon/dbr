@@ -9,7 +9,7 @@ const (
 	full
 )
 
-func join(t joinType, table interface{}, on interface{}) Builder {
+func join(t joinType, table interface{}, on interface{}, alias string) Builder {
 	return BuildFunc(func(d Dialect, buf Buffer) error {
 		buf.WriteString(" ")
 		switch t {
@@ -25,9 +25,17 @@ func join(t joinType, table interface{}, on interface{}) Builder {
 		case string:
 			buf.WriteString(d.QuoteIdent(table))
 		default:
+			buf.WriteString("(")
 			buf.WriteString(placeholder)
 			buf.WriteValue(table)
+			buf.WriteString(")")
 		}
+
+		if alias != "" {
+			buf.WriteString(" AS ")
+			buf.WriteString(alias)
+		}
+
 		buf.WriteString(" ON ")
 		switch on := on.(type) {
 		case string:
