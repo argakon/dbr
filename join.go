@@ -7,6 +7,7 @@ const (
 	left
 	right
 	full
+	fullOuter
 )
 
 func join(t joinType, table interface{}, on interface{}, alias string) Builder {
@@ -19,6 +20,8 @@ func join(t joinType, table interface{}, on interface{}, alias string) Builder {
 			buf.WriteString("RIGHT ")
 		case full:
 			buf.WriteString("FULL ")
+		case fullOuter:
+			buf.WriteString("FULL OUTER ")
 		}
 		buf.WriteString("JOIN ")
 		switch table := table.(type) {

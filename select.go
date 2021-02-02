@@ -404,6 +404,13 @@ func (b *SelectStmt) FullJoin(table, on interface{}, alias string) *SelectStmt {
 	return b
 }
 
+// FullOuterJoin add full outer join.
+// on can be Builder or string.
+func (b *SelectStmt) FullOuterJoin(table, on interface{}, alias string) *SelectStmt {
+	b.JoinTable = append(b.JoinTable, join(fullOuter, table, on, alias))
+	return b
+}
+
 // As creates alias for select statement.
 func (b *SelectStmt) As(alias string) Builder {
 	return as(b, alias)
