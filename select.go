@@ -18,9 +18,10 @@ type SelectStmt struct {
 
 	IsDistinct bool
 
-	Column    []interface{}
-	Table     interface{}
-	JoinTable []Builder
+	WithColumn []interface{}
+	Column     []interface{}
+	Table      interface{}
+	JoinTable  []Builder
 
 	WhereCond  []Builder
 	Group      []Builder
@@ -50,25 +51,35 @@ func (b *SelectStmt) Build(d Dialect, buf Buffer) error {
 		return err
 	}
 
+	column := func(cols []interface{}) {
+		for i, col := range cols {
+			if i > 0 {
+				buf.WriteString(", ")
+			}
+			switch col := col.(type) {
+			case string:
+				// FIXME: no quote ident
+				buf.WriteString(col)
+			default:
+				buf.WriteString(placeholder)
+				buf.WriteValue(col)
+			}
+		}
+	}
+
+	if len(b.WithColumn) > 0 {
+		buf.WriteString("WITH ")
+		column(b.WithColumn)
+		buf.WriteString(" ")
+	}
+
 	buf.WriteString("SELECT ")
 
 	if b.IsDistinct {
 		buf.WriteString("DISTINCT ")
 	}
 
-	for i, col := range b.Column {
-		if i > 0 {
-			buf.WriteString(", ")
-		}
-		switch col := col.(type) {
-		case string:
-			// FIXME: no quote ident
-			buf.WriteString(col)
-		default:
-			buf.WriteString(placeholder)
-			buf.WriteValue(col)
-		}
-	}
+	column(b.Column)
 
 	if b.Table != nil {
 		buf.WriteString(" FROM ")
@@ -257,6 +268,13 @@ func (tx *Tx) SelectBySql(query string, value ...interface{}) *SelectStmt {
 	b.runner = tx
 	b.EventReceiver = tx.EventReceiver
 	b.Dialect = tx.Dialect
+	return b
+}
+
+// With adds a WITH statement before SELECT clause to query.
+func (b *SelectStmt) With(column ...string) *SelectStmt {
+	b.WithColumn = prepareSelect(column)
+
 	return b
 }
 
