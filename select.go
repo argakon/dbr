@@ -23,11 +23,12 @@ type SelectStmt struct {
 	Table      interface{}
 	JoinTable  []Builder
 
-	WhereCond  []Builder
-	Group      []Builder
-	HavingCond []Builder
-	Order      []Builder
-	Suffixes   []Builder
+	PreWhereCond []Builder
+	WhereCond    []Builder
+	Group        []Builder
+	HavingCond   []Builder
+	Order        []Builder
+	Suffixes     []Builder
 
 	LimitCount  int64
 	OffsetCount int64
@@ -98,6 +99,14 @@ func (b *SelectStmt) Build(d Dialect, buf Buffer) error {
 					return err
 				}
 			}
+		}
+	}
+
+	if len(b.PreWhereCond) > 0 {
+		buf.WriteString(" PREWHERE ")
+		err := And(b.PreWhereCond...).Build(d, buf)
+		if err != nil {
+			return err
 		}
 	}
 
@@ -287,6 +296,18 @@ func (b *SelectStmt) From(table interface{}) *SelectStmt {
 
 func (b *SelectStmt) Distinct() *SelectStmt {
 	b.IsDistinct = true
+	return b
+}
+
+// PreWhere adds a prewhere condition (Clickhouse related).
+// query can be Builder or string. value is used only if query type is string.
+func (b *SelectStmt) PreWhere(query interface{}, value ...interface{}) *SelectStmt {
+	switch query := query.(type) {
+	case string:
+		b.PreWhereCond = append(b.PreWhereCond, Expr(query, value...))
+	case Builder:
+		b.PreWhereCond = append(b.PreWhereCond, query)
+	}
 	return b
 }
 
